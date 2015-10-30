@@ -415,6 +415,10 @@ Style/NegatedWhile:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#until-for-negatives'
   Enabled: true
 
+Style/NestedModifier:
+  Description: 'Avoid using nested modifiers.'
+  Enabled: true
+
 Style/NestedTernaryOperator:
   Description: 'Use one expression per branch in a ternary operator.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-nested-ternary'
@@ -764,6 +768,7 @@ Style/TrailingUnderscoreVariable:
   Description: >-
                  Checks for the usage of unneeded trailing underscores at the
                  end of parallel variable assignment.
+  AllowNamedUnderscoreVariables: true
   Enabled: true
 
 Style/VariableInterpolation:
@@ -875,7 +880,7 @@ Lint/BlockAlignment:
   Enabled: true
 
 Lint/CircularArgumentReference:
-  Description: "Don't refer to the keyword argument in the default value."
+  Description: "Default values in optional keyword arguments and optional ordinal arguments should not refer back to the name of the argument."
   Enabled: true
 
 Lint/ConditionPosition:
@@ -1084,6 +1089,10 @@ Performance/Detect:
   Reference: 'https://github.com/JuanitoFatas/fast-ruby#enumerabledetect-vs-enumerableselectfirst-code'
   Enabled: true
 
+Performance/FixedSize:
+  Description: 'Do not compute the size of statically sized objects except in constants'
+  Enabled: true
+
 Performance/FlatMap:
   Description: >-
                   Use `Enumerable#flat_map`
@@ -1158,6 +1167,10 @@ Rails/HasAndBelongsToMany:
 
 Rails/Output:
   Description: 'Checks for calls to puts, print, etc.'
+  Enabled: true
+
+Rails/PluralizationGrammar:
+  Description: 'Checks for incorrect grammar when using methods like `3.day.ago`.'
   Enabled: true
 
 Rails/ReadWriteAttribute:

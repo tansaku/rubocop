@@ -49,7 +49,7 @@ module RuboCop
     #
     # The Cop class is meant to be extended.
     #
-    # Cops track offenses and can autocorrect them of the fly.
+    # Cops track offenses and can autocorrect them on the fly.
     #
     # A commissioner object is responsible for traversing the AST and invoking
     # the specific callbacks on each cop.
@@ -138,6 +138,11 @@ module RuboCop
             config['AllCops'] && config['AllCops']['DisplayStyleGuide'])
       end
 
+      def extra_details?
+        @options[:extra_details] ||
+          config['AllCops'] && config['AllCops']['ExtraDetails']
+      end
+
       # Returns true if the cop name or the cop namespace matches any of the
       # given names.
       def self.match?(given_names)
@@ -212,10 +217,16 @@ module RuboCop
         (url.nil? || url.empty?) ? nil : url
       end
 
+      def details
+        details = cop_config && cop_config['Details']
+        (details.nil? || details.empty?) ? nil : details
+      end
+
       private
 
       def annotate_message(message)
         message = "#{name}: #{message}" if display_cop_names?
+        message += " #{details}" if extra_details?
         if display_style_guide?
           links = [style_guide_url, reference_url].compact.join(', ')
           message = "#{message} (#{links})"

@@ -171,6 +171,7 @@ Command flag              | Description
 `-C/--cache`              | Store and reuse results for faster operation.
 `-d/--debug`              | Displays some extra debug output.
 `-D/--display-cop-names`  | Displays cop names in offense messages.
+`-E/--extra-details`      | Displays extra details in offense messages.
 `-c/--config`             | Run with specified config file.
 `-f/--format`             | Choose a formatter.
 `-o/--out`                | Write output to a file instead of STDOUT.
@@ -269,6 +270,11 @@ Metrics/LineLength:
 
 ### Inheritance
 
+RuboCop supports inheriting configuration from one or more supplemental
+configuration files at runtime.
+
+#### Inheriting from another configuration file in the project
+
 The optional `inherit_from` directive is used to include configuration
 from one or more files. This makes it possible to have the common
 project settings in the `.rubocop.yml` file at the project root, and
@@ -284,6 +290,40 @@ inheritance is:
 inherit_from:
   - ../.rubocop.yml
   - ../conf/.rubocop.yml
+```
+
+#### Inheriting configuration from a dependency gem
+
+The optional `inherit_gem` directive is used to include configuration from
+one or more gems external to the current project. This makes it possible to
+inherit a shared dependency's RuboCop configuration that can be used from
+multiple disparate projects.
+
+Configurations inherited in this way will be essentially *prepended* to the
+`inherit_from` directive, such that the `inherit_gem` configurations will be
+loaded first, then the `inherit_from` relative file paths will be loaded
+(overriding the configurations from the gems), and finally the remaining
+directives in the configuration file will supersede any of the inherited
+configurations. This means the configurations inherited from one or more gems
+have the lowest precedence of inheritance.
+
+The directive should be formatted as a YAML Hash using the gem name as the
+key and the relative path within the gem as the value:
+
+```yaml
+inherit_gem:
+  rubocop: config/default.yml
+  my-shared-gem: .rubocop.yml
+  cucumber: conf/rubocop.yml
+```
+
+**Note**: If the shared dependency is declared using a [Bundler](http://bundler.io/)
+Gemfile and the gem was installed using `bundle install`, it would be
+necessary to also invoke RuboCop using Bundler in order to find the
+dependency's installation path at runtime:
+
+```
+$ bundle exec rubocop <options...>
 ```
 
 ### Defaults
@@ -402,6 +442,20 @@ configuration.
 ```yaml
 Metrics/CyclomaticComplexity:
   Severity: warning
+```
+
+## Details 
+
+Individual cops can be embellished with extra details in offense messages:
+
+```yaml
+Metrics/LineLength:
+  Details: >-
+    If lines are too short, text becomes hard to read because you must
+    constantly jump from one line to the next while reading. If lines are too
+    long, the line jumping becomes too hard because you "lose the line" while
+    going back to the start of the next line.  80 characters is a good
+    compromise.
 ```
 
 #### AutoCorrect
@@ -836,6 +890,7 @@ are no changes in:
 * RuboCop configuration for the file
 * the options given to `rubocop`, with some exceptions that have no
   bearing on which offenses are reported
+* the Ruby version used to invoke `rubocop`
 * version of the `rubocop` program (or to be precise, anything in the
   source code of the invoked `rubocop` program)
 

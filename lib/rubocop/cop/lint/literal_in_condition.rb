@@ -20,11 +20,6 @@ module RuboCop
       class LiteralInCondition < Cop
         MSG = 'Literal `%s` appeared in a condition.'
 
-        LITERALS = [:str, :dstr, :int, :float, :array,
-                    :hash, :regexp, :nil, :true, :false]
-
-        BASIC_LITERALS = LITERALS - [:dstr, :array, :hash]
-
         def on_if(node)
           check_for_literal(node)
         end

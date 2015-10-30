@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-require 'fileutils'
-require 'tmpdir'
 require 'spec_helper'
 require 'timeout'
 
@@ -1304,6 +1302,20 @@ describe RuboCop::CLI, :isolated_environment do
             .to include('Unrecognized cop or namespace: Style/123.')
         end
 
+        it 'exits with error if an empty string is given' do
+          create_file('example.rb', 'x')
+          expect(cli.run(['--only', ''])).to eq(1)
+          expect($stderr.string).to include('Unrecognized cop or namespace: .')
+        end
+
+        %w(Syntax Lint/Syntax).each do |name|
+          it "only checks syntax if #{name} is given" do
+            create_file('example.rb', 'x ')
+            expect(cli.run(['--only', name])).to eq(0)
+            expect($stdout.string).to include('no offenses detected')
+          end
+        end
+
         %w(Lint/UnneededDisable UnneededDisable).each do |name|
           it "exits with error if cop name #{name} is passed" do
             create_file('example.rb', ['if x== 0 ',
@@ -1491,6 +1503,21 @@ describe RuboCop::CLI, :isolated_environment do
           expect($stderr.string)
             .to include('Unrecognized cop or namespace: Style/123.')
         end
+
+        it 'exits with error if an empty string is given' do
+          create_file('example.rb', 'x')
+          expect(cli.run(['--except', ''])).to eq(1)
+          expect($stderr.string).to include('Unrecognized cop or namespace: .')
+        end
+
+        %w(Syntax Lint/Syntax).each do |name|
+          it "exits with error if #{name} is given" do
+            create_file('example.rb', 'x ')
+            expect(cli.run(['--except', name])).to eq(1)
+            expect($stderr.string)
+              .to include('Syntax checking can not be turned off.')
+          end
+        end
       end
 
       context 'when one cop plus one namespace are given' do
@@ -1624,6 +1651,27 @@ describe RuboCop::CLI, :isolated_environment do
                   "#{file}:1:41: C: Style/TrailingWhitespace: Trailing " \
                   'whitespace detected.',
                   ''].join("\n"))
+      end
+    end
+
+    describe '-E/--extra-details' do
+      it 'shows extra details' do
+        create_file('example1.rb', 'puts 0 # rubocop:disable NumericLiterals ')
+        create_file('.rubocop.yml',
+                    ['TrailingWhitespace:',
+                     '  Details: Trailing space is just sloppy.'])
+        file = abs('example1.rb')
+
+        expect(cli.run(['--format', 'emacs', '--extra-details',
+                        'example1.rb'])).to eq(1)
+        expect($stdout.string)
+          .to eq(["#{file}:1:8: W: Unnecessary " \
+                  'disabling of NumericLiterals . ',
+                  "#{file}:1:41: C: Trailing " \
+                  'whitespace detected. Trailing space is just sloppy.',
+                  ''].join("\n"))
+
+        expect($stderr.string).to eq('')
       end
     end
 
@@ -3431,6 +3479,19 @@ describe RuboCop::CLI, :isolated_environment do
       end
 
       it 'inherits relative excludes correctly' do
+        expect(cli.run([])).to eq(0)
+      end
+    end
+
+    context 'when configuration is taken from $HOME/.rubocop.yml' do
+      before do
+        create_file("#{Dir.home}/.rubocop.yml", ['Metrics/LineLength:',
+                                                 '  Exclude:',
+                                                 '    - dir/example.rb'])
+        create_file('dir/example.rb', '#' * 90)
+      end
+
+      it 'handles relative excludes correctly when run from project root' do
         expect(cli.run([])).to eq(0)
       end
     end

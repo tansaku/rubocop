@@ -15,13 +15,14 @@ module RuboCop
       end
     end
 
-    attr_reader :errors, :aborting
+    attr_reader :errors, :warnings, :aborting
     alias_method :aborting?, :aborting
 
     def initialize(options, config_store)
       @options = options
       @config_store = config_store
       @errors = []
+      @warnings = []
       @aborting = false
     end
 
@@ -85,10 +86,7 @@ module RuboCop
         file_started(file, processed_source.disabled_line_ranges,
                      processed_source.comments)
         offenses = do_inspection_loop(file, processed_source)
-        if cache
-          cache.save(offenses, processed_source.disabled_line_ranges,
-                     processed_source.comments)
-        end
+        save_in_cache(cache, offenses, processed_source)
       end
 
       offenses = formatter_set.file_finished(file, offenses.compact.sort.freeze)
@@ -118,6 +116,17 @@ module RuboCop
         !@options[:auto_gen_config] &&
         # Auto-correction needs a full run. It can not use cached results.
         !@options[:auto_correct]
+    end
+
+    def save_in_cache(cache, offenses, processed_source)
+      return unless cache
+      # Caching results when a cop has crashed would prevent the crash in the
+      # next run, since the cop would not be called then. We want crashes to
+      # show up the same in each run.
+      return if errors.any? || warnings.any?
+
+      cache.save(offenses, processed_source.disabled_line_ranges,
+                 processed_source.comments)
     end
 
     def do_inspection_loop(file, processed_source)
@@ -169,6 +178,7 @@ module RuboCop
       team = Cop::Team.new(mobilized_cop_classes(config), config, @options)
       offenses = team.inspect_file(processed_source)
       @errors.concat(team.errors)
+      @warnings.concat(team.warnings)
       [offenses, team.updated_source_file?]
     end
 
@@ -177,7 +187,9 @@ module RuboCop
       @mobilized_cop_classes[config.object_id] ||= begin
         cop_classes = Cop::Cop.all
 
-        [:only, :except].each { |opt| Options.validate_cop_list(@options[opt]) }
+        [:only, :except].each do |opt|
+          OptionsValidator.validate_cop_list(@options[opt])
+        end
 
         if @options[:only]
           cop_classes.select! { |c| c.match?(@options[:only]) }

@@ -1,11 +1,14 @@
 # encoding: utf-8
 
 require 'spec_helper'
-require 'stringio'
 
 module RuboCop
   module Formatter
     describe SimpleTextFormatter do
+      before do
+        Rainbow.enabled = true
+      end
+
       subject(:formatter) { described_class.new(output) }
       let(:output) { StringIO.new }
 
@@ -18,7 +21,8 @@ module RuboCop
 
         let(:offense) do
           Cop::Offense.new(:convention, location,
-                           'This is a message.', 'CopName', status)
+                           'This is a message with `colored text`.',
+                           'CopName', status)
         end
 
         let(:location) do
@@ -54,7 +58,7 @@ module RuboCop
 
           it 'prints message as-is' do
             expect(output.string)
-              .to include(': This is a message.')
+              .to include(': This is a message with colored text.')
           end
         end
 
@@ -63,7 +67,7 @@ module RuboCop
 
           it 'prints [Corrected] along with message' do
             expect(output.string)
-              .to include(': [Corrected] This is a message.')
+              .to include(': [Corrected] This is a message with colored text.')
           end
         end
       end
@@ -128,6 +132,10 @@ module RuboCop
                ''].join("\n"))
           end
         end
+      end
+
+      after do
+        Rainbow.enabled = false
       end
     end
   end
